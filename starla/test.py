@@ -14,32 +14,31 @@ class StoreAndTerminateWrapper(gym.Wrapper):
         super().__init__(env)
         self.max_steps = 200
         self.current_step = 0
+        self.env=env
         self.mem = []
         self.TotalReward = 0.0
-        self.first_state = None
-        self.first_obs = None
-        self.prev_obs = None
+        self.first_state = 0
+        self.first_obs = 0
+        self.prev_obs = 0
         self.states_list = []
+        self.info = {}
 
     def reset(self, *args, **kwargs):
         self.current_step = 0
-        obs, info = self.env.reset(*args, **kwargs)
+        obs, _ = self.env.reset(*args, **kwargs)
         self.TotalReward = 0.0
         self.first_obs = obs
-        self.prev_obs = obs
-        self.mem = []
-        self.states_list = []
-        return obs, info
+        return obs
 
     def step(self, action):
         if self.current_step == 0:
-            self.first_state = deepcopy(self.env.unwrapped.state)
+            self.first_state = deepcopy(self.env)
             self.states_list.append(self.first_state)
         self.current_step += 1
         obs, reward, terminated, truncated, info = self.env.step(action)
         done = terminated or truncated
         self.TotalReward += reward
-        self.mem.append((self.prev_obs, action))
+        self.mem.append(tuple((self.prev_obs,action)))
         self.prev_obs = obs
         if self.current_step >= self.max_steps:
             done = True
@@ -48,18 +47,17 @@ class StoreAndTerminateWrapper(gym.Wrapper):
             reward = -201 - self.TotalReward
             self.TotalReward = -200
         if done:
-            self.mem.append(('done', self.TotalReward))
-        info['mem'] = self.mem
-        info['state'] = self.states_list
+            self.mem.append(tuple(('done',self.TotalReward)))
+        self.info['mem'] = self.mem
+        self.info['state'] = self.states_list
         return obs, reward, terminated, truncated, info
 
     def set_state(self, state):
-        self.env.unwrapped.state = deepcopy(state)
+        self.env = deepcopy(state)
         obs = np.array(self.env.unwrapped.state)
         self.current_step = 0
         self.TotalReward = 0.0
         self.first_obs = obs
-        self.prev_obs = obs
         return obs
 
 class StopOnFailureRateCallback(BaseCallback):
@@ -150,5 +148,5 @@ callback = StopOnFailureRateCallback(
 
 dqn_model.learn(total_timesteps=90_000, callback=callback)
 print("Training stops after {} steps.".format(callback.n_calls))
-MODEL_PATH = "RLtest\\1.zip"
+MODEL_PATH = "RLtest\\3.zip"
 dqn_model.save(MODEL_PATH)
