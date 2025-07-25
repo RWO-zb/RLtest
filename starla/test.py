@@ -54,7 +54,7 @@ class StoreAndTerminateWrapper(gym.Wrapper):
 
     def set_state(self, state):
         self.env = deepcopy(state)
-        obs = np.array(self.env.unwrapped.state)
+        obs = np.array(list(self.env.unwrapped.state))
         self.current_step = 0
         self.TotalReward = 0.0
         self.first_obs = obs
