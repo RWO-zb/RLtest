@@ -25,10 +25,10 @@ class StoreAndTerminateWrapper(gym.Wrapper):
 
     def reset(self, *args, **kwargs):
         self.current_step = 0
-        obs, _ = self.env.reset(*args, **kwargs)
+        obs, info = self.env.reset(*args, **kwargs)
         self.TotalReward = 0.0
         self.first_obs = obs
-        return obs
+        return obs,info
 
     def step(self, action):
         if self.current_step == 0:
