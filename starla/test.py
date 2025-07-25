@@ -146,7 +146,7 @@ callback = StopOnFailureRateCallback(
     start_on_steps=82_000,
 )
 
-dqn_model.learn(total_timesteps=90_000, callback=callback)
+dqn_model.learn(total_timesteps=1_000, callback=callback)
 print("Training stops after {} steps.".format(callback.n_calls))
-MODEL_PATH = "RLtest\\3.zip"
+MODEL_PATH = "RLtest\\4.zip"
 dqn_model.save(MODEL_PATH)
