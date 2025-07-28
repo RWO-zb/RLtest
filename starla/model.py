@@ -2,6 +2,63 @@ import gymnasium as gym
 import stable_baselines3
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import BaseCallback
+from copy import deepcopy
+import numpy as np
+
+class StoreAndTerminateWrapper(gym.Wrapper):
+    '''
+    :param env: (gym.Env) Gym environment that will be wrapped
+    :param max_steps: (int) Max number of steps per episode
+    '''
+    def __init__(self, env):
+        super().__init__(env)
+        self.max_steps = 200
+        self.current_step = 0
+        self.env=env
+        self.mem = []
+        self.TotalReward = 0.0
+        self.first_state = 0
+        self.first_obs = 0
+        self.prev_obs = 0
+        self.states_list = []
+        self.info = {}
+
+    def reset(self, *args, **kwargs):
+        self.current_step = 0
+        obs, info = self.env.reset(*args, **kwargs)
+        self.TotalReward = 0.0
+        self.first_obs = obs
+        return obs,info
+
+    def step(self, action):
+        if self.current_step == 0:
+            self.first_state = deepcopy(self.env)
+            self.states_list.append(self.first_state)
+        self.current_step += 1
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        done = terminated or truncated
+        self.TotalReward += reward
+        self.mem.append(tuple((self.prev_obs,action)))
+        self.prev_obs = obs
+        if self.current_step >= self.max_steps:
+            done = True
+        if obs[0] <= -1.2:
+            done = True
+            reward = -201 - self.TotalReward
+            self.TotalReward = -200
+        if done:
+            self.mem.append(tuple(('done',self.TotalReward)))
+        self.info['mem'] = self.mem
+        self.info['state'] = self.states_list
+        return obs, reward, terminated, truncated, info
+
+    def set_state(self, state):
+        self.env = deepcopy(state)
+        obs = np.array(list(self.env.unwrapped.state))
+        self.current_step = 0
+        self.TotalReward = 0.0
+        self.first_obs = obs
+        return obs
 
 class StopOnFailureRateCallback(BaseCallback):
     """
@@ -60,7 +117,8 @@ class StopOnFailureRateCallback(BaseCallback):
         failure_rate = num_failures / self.num_eval_episodes
         return failure_rate
     
-env = gym.make("MountainCar-v0", render_mode="rgb_array")
+mtc = gym.make('MountainCar-v0')
+env = StoreAndTerminateWrapper(mtc)
 dqn_model = DQN(
     "MlpPolicy",
     env,
@@ -90,5 +148,5 @@ callback = StopOnFailureRateCallback(
 
 dqn_model.learn(total_timesteps=90_000, callback=callback)
 print("Training stops after {} steps.".format(callback.n_calls))
-MODEL_PATH = "RLtest\\1.zip"
+MODEL_PATH = "RLtest\\4.zip"
 dqn_model.save(MODEL_PATH)
