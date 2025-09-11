@@ -11,7 +11,7 @@ class StoreAndTerminateWrapper(gym.Wrapper):
     :param max_steps: (int) Max number of steps per episode
     '''
     def __init__(self, env):
-        super().__init__(env)
+        super(StoreAndTerminateWrapper,self).__init__(env)
         self.max_steps = 200
         self.current_step = 0
         self.env=env
@@ -32,6 +32,7 @@ class StoreAndTerminateWrapper(gym.Wrapper):
 
     def step(self, action):
         if self.current_step == 0:
+            self.prev_obs = self.first_obs
             self.first_state = deepcopy(self.env)
             self.states_list.append(self.first_state)
         self.current_step += 1
@@ -41,12 +42,12 @@ class StoreAndTerminateWrapper(gym.Wrapper):
         self.mem.append(tuple((self.prev_obs,action)))
         self.prev_obs = obs
         if self.current_step >= self.max_steps:
-            done = True
+            truncated = True
         if obs[0] <= -1.2:
-            done = True
+            truncated = True
             reward = -201 - self.TotalReward
             self.TotalReward = -200
-        if done:
+        if terminated or truncated:
             self.mem.append(tuple(('done',self.TotalReward)))
         self.info['mem'] = self.mem
         self.info['state'] = self.states_list
@@ -134,7 +135,6 @@ dqn_model = DQN(
     batch_size=128,
     learning_rate=4e-3,
     policy_kwargs=dict(net_arch=[256, 256]),
-    seed=2,
 )
 
 callback = StopOnFailureRateCallback(
@@ -143,10 +143,10 @@ callback = StopOnFailureRateCallback(
     num_eval_episodes=100,
     failure_rate_treshold=0.10,
     verbose=1,
-    start_on_steps=82_000,
+    start_on_steps=90_000,
 )
 
-dqn_model.learn(total_timesteps=90_000, callback=callback)
+dqn_model.learn(total_timesteps=120_000, callback=callback)
 print("Training stops after {} steps.".format(callback.n_calls))
-MODEL_PATH = "RLtest\\4.zip"
+MODEL_PATH = "RLtest\\3.zip"
 dqn_model.save(MODEL_PATH)
