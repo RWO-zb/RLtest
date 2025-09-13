@@ -140,13 +140,13 @@ dqn_model = DQN(
 callback = StopOnFailureRateCallback(
     eval_env=gym.make("MountainCar-v0", render_mode="rgb_array"),
     eval_frequency=500,
-    num_eval_episodes=100,
-    failure_rate_treshold=0.10,
+    num_eval_episodes=500,
+    failure_rate_treshold=0.20,
     verbose=1,
     start_on_steps=90_000,
 )
 
 dqn_model.learn(total_timesteps=120_000, callback=callback)
 print("Training stops after {} steps.".format(callback.n_calls))
-MODEL_PATH = "RLtest\\3.zip"
+MODEL_PATH = "1.zip"
 dqn_model.save(MODEL_PATH)

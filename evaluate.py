@@ -95,5 +95,5 @@ def evaluate_failure_rate(model, eval_env, num_eval_episodes=100) :
         return failure_rate
 
 model=DQN.load('D:\\code\\RLtest\\3.zip')
-print(evaluate_policy(model, env, n_eval_episodes=500))
-print(evaluate_failure_rate(model, env, num_eval_episodes=500))
+print(evaluate_policy(model, env, n_eval_episodes=2000))
+print(evaluate_failure_rate(model, env, num_eval_episodes=2000))
